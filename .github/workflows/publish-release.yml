@@ -35,31 +35,3 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-  deploy:
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.ref }}
-      - name: Set Up Kubectl
-        uses: azure/k8s-set-context@v1
-        with:
-          kubeconfig: ${{ secrets.KUBECONFIG }}
-      - name: Set Up Certificate
-        uses: azure/k8s-deploy@v1
-        with:
-          namespace: istio-system
-          manifests: |
-            k8s/certificate.yaml
-      - name: Deploy to the Kubernetes cluster
-        uses: azure/k8s-deploy@v1
-        with:
-          namespace: prometheus
-          manifests: |
-            k8s/gateway.yaml
-            k8s/virtualservice.yaml
-            k8s/deployment.yaml
-          images: |
-            ghcr.io/solusidatapintar/gatus:${{ github.ref_name }}
