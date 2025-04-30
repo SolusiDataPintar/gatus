@@ -20,16 +20,6 @@ jobs:
         with:
           timeZone: UTC+7
           format: 'YYYY-MM-DD-HH-mm-ss'
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v1
-        with:
-          node-version: ${{ matrix.node-version }}
-      - name: Install dependencies
-        run: |
-          npm install --save --force --legacy-peer-deps
-          npm install @material-ui/core --legacy-peer-deps
-      - name: Build
-        run: DISABLE_ESLINT_PLUGIN=true npm run build --verbose
       - name: Container Image Meta
         id: meta
         uses: docker/metadata-action@v5
@@ -50,7 +40,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./dockerfile
+          file: ./Dockerfile
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
