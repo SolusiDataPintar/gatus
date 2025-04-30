@@ -1,0 +1,19 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: status-vsvc
+  namespace: prometheus
+spec:
+  hosts:
+  - "status.dev.chainsmart.id"
+  gateways:
+  - status-gateway
+  http:
+  - match:
+    - uri:
+        prefix: /
+    route:
+    - destination:
+        host: gatus.prometheus.svc.cluster.local
+        port:
+          number: 80

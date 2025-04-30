@@ -1,51 +1,82 @@
-name: publish-release
 on:
-  release:
-    types: [published]
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+-rc-[0-9]+'
+
 jobs:
-  publish-release:
-    name: publish-release
+  build:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    strategy:
+      matrix:
+        node-version: [22.4.1]
     steps:
-      - uses: actions/checkout@v4
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      - name: Get image repository
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: dev
+      - name: Get Time
+        id: time
+        uses: nanzm/get-time-action@master
+        with:
+          timeZone: UTC+7
+          format: 'YYYY-MM-DD-HH-mm-ss'
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Install dependencies
         run: |
-          echo DOCKER_IMAGE_REPOSITORY=$(echo ${{ secrets.DOCKER_USERNAME }}/${{ github.event.repository.name }} | tr '[:upper:]' '[:lower:]') >> $GITHUB_ENV
-          echo GHCR_IMAGE_REPOSITORY=$(echo ghcr.io/${{ github.actor }}/${{ github.event.repository.name }} | tr '[:upper:]' '[:lower:]') >> $GITHUB_ENV
-      - name: Get the release
-        run: echo RELEASE=${GITHUB_REF/refs\/tags\//} >> $GITHUB_ENV
-      - name: Login to Docker Registry
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Docker meta
+          npm install --save --force --legacy-peer-deps
+          npm install @material-ui/core --legacy-peer-deps
+      - name: Build
+        run: DISABLE_ESLINT_PLUGIN=true npm run build --verbose
+      - name: Container Image Meta
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: |
-            ${{ env.DOCKER_IMAGE_REPOSITORY }}
-            ${{ env.GHCR_IMAGE_REPOSITORY }}
+          images: ghcr.io/solusidatapintar/gatus
           tags: |
-            type=raw,value=${{ env.RELEASE }}
-            type=raw,value=stable
-            type=raw,value=latest
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v6
+            type=semver,pattern={{raw}}
+      - name: Login to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
         with:
-          platforms: linux/amd64,linux/arm/v7,linux/arm64
-          pull: true
-          push: true
+          registry: https://ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set up Container Image Build
+        uses: docker/setup-buildx-action@v3
+      - name: Build and Push Container Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./dockerfile
+          push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set Up Kubectl
+        uses: azure/k8s-set-context@v1
+        with:
+          kubeconfig: ${{ secrets.KUBECONFIG }}
+      - name: Set Up Certificate
+        uses: azure/k8s-deploy@v1
+        with:
+          namespace: istio-system
+          manifests: |
+            k8s/certificate.yaml
+      - name: Deploy to the Kubernetes cluster
+        uses: azure/k8s-deploy@v1
+        with:
+          namespace: wisebank
+          manifests: |
+            k8s/gateway.yaml
+            k8s/virtualservice.yaml
+            k8s/deployment.yaml
+          images: |
+            ghcr.io/solusidatapintar/smartshieldui:${{ github.ref_name }}

@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gatus
+  namespace: prometheus
+  labels:
+    app: gatus
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gatus
+  template:
+    metadata:
+      labels:
+        app: gatus
+    spec:
+      imagePullSecrets:
+        - name: chainsmart-pull-image
+      containers:
+        - name: gatus
+          image: ghcr.io/solusidatapintar/gatus:v1.0.0-rc-1
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              memory: '50Mi'
+              cpu: '10m'
+            limits:
+              memory: '500Mi'
+              cpu: '500m'
