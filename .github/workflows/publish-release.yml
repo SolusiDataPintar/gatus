@@ -79,4 +79,4 @@ jobs:
             k8s/virtualservice.yaml
             k8s/deployment.yaml
           images: |
-            ghcr.io/solusidatapintar/smartshieldui:${{ github.ref_name }}
+            ghcr.io/solusidatapintar/gatus:${{ github.ref_name }}
