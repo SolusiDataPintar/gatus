@@ -25,7 +25,7 @@
   <div v-if="config && config.oidc && !config.authenticated" class="mx-auto max-w-md pt-12">
     <img src="./assets/logo.svg" alt="Gatus" class="mx-auto" style="max-width:160px; min-width:50px; min-height:50px;"/>
     <h2 class="mt-4 text-center text-4xl font-extrabold text-gray-800 dark:text-gray-200">
-      Gatus
+      SmartShield Service Health Status
     </h2>
     <div class="py-7 px-4 rounded-sm sm:px-10">
       <div v-if="$route && $route.query.error" class="text-red-500 text-center mb-5">
@@ -36,7 +36,7 @@
       </div>
       <div>
         <a :href="`${SERVER_URL}/oidc/login`" class="max-w-lg mx-auto w-full flex justify-center py-3 px-4 border border-green-800 rounded-md shadow-lg text-sm text-white bg-green-700 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800">
-          Login to Chainsmart Health Dashboard
+          Login
         </a>
       </div>
     </div>
