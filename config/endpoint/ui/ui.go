@@ -62,7 +62,7 @@ func GetDefaultConfig() *Config {
 		HideConditions:              false,
 		Badge: &Badge{
 			ResponseTime: &ResponseTime{
-				Thresholds: []int{50, 200, 300, 500, 750},
+				Thresholds: []int{50, 450, 700, 1500, 2000},
 			},
 		},
 	}
